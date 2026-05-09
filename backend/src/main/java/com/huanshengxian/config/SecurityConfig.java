@@ -9,7 +9,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,23 +28,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configure(http))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
+            .csrf().disable()
+            .cors().and()
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+            .authorizeRequests()
                 // 公开接口
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/banners/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/suppliers/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/feedbacks/product/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/analytics/**").permitAll()
+                .antMatchers("/auth/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/products/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/categories/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/banners/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/suppliers/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/feedbacks/product/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/analytics/**").permitAll()
                 // Swagger
-                .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
+                .antMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 // 其他需要认证
                 .anyRequest().authenticated()
-            )
+            .and()
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
