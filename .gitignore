@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+target/
+*.class
+*.jar
+!target/*.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.suo
+*.user
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.local
+
+# Temp files
+*.tmp
+*.swp
+.cache/
+tmp/
+
+# Docker volumes (local development)
+mysql_data/

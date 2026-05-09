@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Build artifacts
+node_modules
+dist
+build
+target
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.swp
+.cache
+
+# Python
+__pycache__
+.venv
+*.pyc
+
+# Java
+*.class
+*.jar
+!target/*.jar
