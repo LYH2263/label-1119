@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huanshengxian.mapper.CouponMapper">
+
+    <resultMap id="CouponResultMap" type="com.huanshengxian.entity.Coupon">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="type" property="type"/>
+        <result column="discount_value" property="discountValue"/>
+        <result column="min_amount" property="minAmount"/>
+        <result column="total_count" property="totalCount"/>
+        <result column="received_count" property="receivedCount"/>
+        <result column="used_count" property="usedCount"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="status" property="status"/>
+        <result column="description" property="description"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="received" property="received"/>
+    </resultMap>
+
+    <select id="selectAvailableCoupons" resultMap="CouponResultMap">
+        SELECT c.*,
+               CASE WHEN uc.id IS NOT NULL THEN true ELSE false END AS received
+        FROM coupons c
+        LEFT JOIN user_coupons uc ON c.id = uc.coupon_id AND uc.user_id = #{userId} AND uc.deleted_at IS NULL
+        WHERE c.status = 1
+          AND c.deleted_at IS NULL
+          AND c.start_time &lt;= NOW()
+          AND c.end_time &gt;= NOW()
+          AND c.received_count &lt; c.total_count
+        ORDER BY c.created_at DESC
+    </select>
+
+    <select id="selectCouponStats" resultType="java.util.Map">
+        SELECT
+            c.id AS couponId,
+            c.name AS couponName,
+            c.total_count AS totalCount,
+            c.received_count AS receivedCount,
+            c.used_count AS usedCount,
+            ROUND(c.used_count * 100.0 / NULLIF(c.received_count, 0), 2) AS usageRate
+        FROM coupons c
+        WHERE c.id = #{couponId}
+          AND c.deleted_at IS NULL
+    </select>
+
+    <select id="selectUsableCoupons" resultMap="CouponResultMap">
+        SELECT c.*
+        FROM coupons c
+        INNER JOIN user_coupons uc ON c.id = uc.coupon_id AND uc.status = 0 AND uc.deleted_at IS NULL
+        WHERE uc.user_id = #{userId}
+          AND c.status = 1
+          AND c.deleted_at IS NULL
+          AND c.start_time &lt;= NOW()
+          AND c.end_time &gt;= NOW()
+          AND c.min_amount &lt;= #{orderAmount}
+        ORDER BY c.discount_value DESC
+    </select>
+
+</mapper>

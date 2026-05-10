@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huanshengxian.mapper.UserCouponMapper">
+
+    <resultMap id="UserCouponResultMap" type="com.huanshengxian.entity.UserCoupon">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="coupon_id" property="couponId"/>
+        <result column="order_id" property="orderId"/>
+        <result column="status" property="status"/>
+        <result column="received_at" property="receivedAt"/>
+        <result column="used_at" property="usedAt"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <association property="coupon" javaType="com.huanshengxian.entity.Coupon">
+            <id column="c_id" property="id"/>
+            <result column="c_name" property="name"/>
+            <result column="c_type" property="type"/>
+            <result column="c_discount_value" property="discountValue"/>
+            <result column="c_min_amount" property="minAmount"/>
+            <result column="c_total_count" property="totalCount"/>
+            <result column="c_received_count" property="receivedCount"/>
+            <result column="c_used_count" property="usedCount"/>
+            <result column="c_start_time" property="startTime"/>
+            <result column="c_end_time" property="endTime"/>
+            <result column="c_status" property="status"/>
+            <result column="c_description" property="description"/>
+        </association>
+    </resultMap>
+
+    <select id="selectByUserIdAndStatus" resultMap="UserCouponResultMap">
+        SELECT uc.*,
+               c.id AS c_id,
+               c.name AS c_name,
+               c.type AS c_type,
+               c.discount_value AS c_discount_value,
+               c.min_amount AS c_min_amount,
+               c.total_count AS c_total_count,
+               c.received_count AS c_received_count,
+               c.used_count AS c_used_count,
+               c.start_time AS c_start_time,
+               c.end_time AS c_end_time,
+               c.status AS c_status,
+               c.description AS c_description
+        FROM user_coupons uc
+        INNER JOIN coupons c ON uc.coupon_id = c.id AND c.deleted_at IS NULL
+        WHERE uc.user_id = #{userId}
+          AND uc.deleted_at IS NULL
+          <if test="status != null">
+              AND uc.status = #{status}
+          </if>
+        ORDER BY uc.created_at DESC
+    </select>
+
+    <select id="countByUserAndCoupon" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user_coupons
+        WHERE user_id = #{userId}
+          AND coupon_id = #{couponId}
+          AND deleted_at IS NULL
+    </select>
+
+</mapper>
