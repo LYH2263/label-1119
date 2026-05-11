@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huanshengxian.mapper.CouponMapper">
+
+    <resultMap id="BaseResultMap" type="com.huanshengxian.entity.Coupon">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="type" property="type"/>
+        <result column="amount" property="amount"/>
+        <result column="discount" property="discount"/>
+        <result column="min_amount" property="minAmount"/>
+        <result column="total_count" property="totalCount"/>
+        <result column="received_count" property="receivedCount"/>
+        <result column="used_count" property="usedCount"/>
+        <result column="valid_start_time" property="validStartTime"/>
+        <result column="valid_end_time" property="validEndTime"/>
+        <result column="status" property="status"/>
+        <result column="description" property="description"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted_at" property="deletedAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, type, amount, discount, min_amount, total_count, received_count, used_count,
+        valid_start_time, valid_end_time, status, description, created_at, updated_at, deleted_at
+    </sql>
+
+    <select id="selectCouponPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM coupons
+        WHERE deleted_at IS NULL
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectAvailableCoupons" resultMap="BaseResultMap">
+        SELECT c.*
+        FROM coupons c
+        WHERE c.deleted_at IS NULL
+          AND c.status = 1
+          AND c.valid_start_time &lt;= #{now}
+          AND c.valid_end_time >= #{now}
+          AND c.received_count &lt; c.total_count
+          AND NOT EXISTS (
+              SELECT 1
+              FROM user_coupons uc
+              WHERE uc.coupon_id = c.id
+                AND uc.user_id = #{userId}
+                AND uc.deleted_at IS NULL
+          )
+        ORDER BY c.created_at DESC
+    </select>
+
+    <select id="selectUserAvailableCoupons" resultMap="BaseResultMap">
+        SELECT c.*
+        FROM coupons c
+        INNER JOIN user_coupons uc ON c.id = uc.coupon_id
+        WHERE uc.deleted_at IS NULL
+          AND c.deleted_at IS NULL
+          AND uc.user_id = #{userId}
+          AND uc.status = 0
+          AND c.valid_start_time &lt;= #{now}
+          AND c.valid_end_time >= #{now}
+          AND c.min_amount &lt;= #{orderAmount}
+        ORDER BY c.min_amount DESC, c.amount DESC, c.discount ASC
+    </select>
+
+    <update id="incrementReceivedCount">
+        UPDATE coupons
+        SET received_count = received_count + 1
+        WHERE id = #{id}
+          AND received_count &lt; total_count
+    </update>
+
+    <update id="incrementUsedCount">
+        UPDATE coupons
+        SET used_count = used_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <update id="decrementUsedCount">
+        UPDATE coupons
+        SET used_count = used_count - 1
+        WHERE id = #{id}
+          AND used_count > 0
+    </update>
+
+</mapper>

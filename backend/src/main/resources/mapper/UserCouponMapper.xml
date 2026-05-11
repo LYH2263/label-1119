@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huanshengxian.mapper.UserCouponMapper">
+
+    <resultMap id="BaseResultMap" type="com.huanshengxian.entity.UserCoupon">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="coupon_id" property="couponId"/>
+        <result column="status" property="status"/>
+        <result column="order_id" property="orderId"/>
+        <result column="used_time" property="usedTime"/>
+        <result column="received_time" property="receivedTime"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted_at" property="deletedAt"/>
+        <association property="coupon" javaType="com.huanshengxian.entity.Coupon">
+            <id column="coupon_id" property="id"/>
+            <result column="coupon_name" property="name"/>
+            <result column="coupon_type" property="type"/>
+            <result column="coupon_amount" property="amount"/>
+            <result column="coupon_discount" property="discount"/>
+            <result column="coupon_min_amount" property="minAmount"/>
+            <result column="coupon_valid_start_time" property="validStartTime"/>
+            <result column="coupon_valid_end_time" property="validEndTime"/>
+            <result column="coupon_description" property="description"/>
+        </association>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        uc.id, uc.user_id, uc.coupon_id, uc.status, uc.order_id, uc.used_time,
+        uc.received_time, uc.created_at, uc.updated_at, uc.deleted_at
+    </sql>
+
+    <sql id="Coupon_Column_List">
+        c.name AS coupon_name, c.type AS coupon_type, c.amount AS coupon_amount,
+        c.discount AS coupon_discount, c.min_amount AS coupon_min_amount,
+        c.valid_start_time AS coupon_valid_start_time, c.valid_end_time AS coupon_valid_end_time,
+        c.description AS coupon_description
+    </sql>
+
+    <select id="selectUserCouponPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        <include refid="Coupon_Column_List"/>
+        FROM user_coupons uc
+        LEFT JOIN coupons c ON uc.coupon_id = c.id
+        WHERE uc.deleted_at IS NULL
+          AND uc.user_id = #{userId}
+        <if test="status != null">
+            AND uc.status = #{status}
+        </if>
+        ORDER BY uc.created_at DESC
+    </select>
+
+    <select id="selectAvailableCouponsWithDetail" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        <include refid="Coupon_Column_List"/>
+        FROM user_coupons uc
+        INNER JOIN coupons c ON uc.coupon_id = c.id
+        WHERE uc.deleted_at IS NULL
+          AND c.deleted_at IS NULL
+          AND uc.user_id = #{userId}
+          AND uc.status = 0
+          AND c.valid_start_time &lt;= #{now}
+          AND c.valid_end_time >= #{now}
+          AND c.min_amount &lt;= #{orderAmount}
+        ORDER BY c.min_amount DESC, c.amount DESC, c.discount ASC
+    </select>
+
+    <update id="updateExpiredCoupons">
+        UPDATE user_coupons uc
+        INNER JOIN coupons c ON uc.coupon_id = c.id
+        SET uc.status = 2
+        WHERE uc.deleted_at IS NULL
+          AND uc.status = 0
+          AND c.valid_end_time &lt; #{now}
+    </update>
+
+    <select id="selectByOrderId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        <include refid="Coupon_Column_List"/>
+        FROM user_coupons uc
+        LEFT JOIN coupons c ON uc.coupon_id = c.id
+        WHERE uc.deleted_at IS NULL
+          AND uc.order_id = #{orderId}
+        LIMIT 1
+    </select>
+
+</mapper>
